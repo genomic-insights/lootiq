@@ -1,0 +1,17 @@
+export const Colors = {
+  bg: '#0f0f14',
+  card: '#1a1a24',
+  cardBorder: '#2a2a38',
+  cardInner: '#1e1e2a',
+  accent: '#7F77DD',
+  accentDark: '#534AB7',
+  textPrimary: '#ffffff',
+  textSecondary: '#888888',
+  textMuted: '#555555',
+  danger: '#E24B4A',
+  success: '#1D9E75',
+  epicGradient: ['#1a1a40', '#2d1f6e'] as const,
+  steamGradient: ['#1b2838', '#2a475e'] as const,
+  gogGradient: ['#1c1c1c', '#3a1a5c'] as const,
+  psGradient: ['#00439c', '#0070d1'] as const,
+}
