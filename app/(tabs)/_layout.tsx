@@ -21,6 +21,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <ExploreIcon color={color} />,
         }}
       />
+
       <Tabs.Screen
         name="notifications"
         options={{
@@ -28,6 +29,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <BellIcon color={color} />,
         }}
       />
+
       <Tabs.Screen
         name="saved"
         options={{
@@ -35,6 +37,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <BookmarkIcon color={color} />,
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
@@ -52,8 +55,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: Colors.cardBorder,
     elevation: 0,
-    height: 80,
-    paddingBottom: 16,
+    height: 96,
+    paddingBottom: 32,
     paddingTop: 8,
   },
   label: {
