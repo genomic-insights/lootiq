@@ -7,9 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   Linking,
-  Alert,
   Share,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -40,11 +38,13 @@ export default function GameDetailScreen() {
         setLoading(false)
       }
     }
+
     load()
   }, [id])
 
   const handleShare = async () => {
     if (!game) return
+
     await Share.share({
       message: `🎮 ${game.title} şu an ücretsiz! ${game.platforms} üzerinden al: ${game.open_giveaway_url} — LootiQ uygulamasından`,
     })
@@ -52,6 +52,7 @@ export default function GameDetailScreen() {
 
   const handleSave = async () => {
     if (!game) return
+
     if (saved) {
       await removeSavedGame(game.id)
       setSaved(false)
@@ -78,14 +79,14 @@ export default function GameDetailScreen() {
 
   if (error || !game) {
     return (
-      <SafeAreaView style={styles.screen}>
+      <View style={styles.screen}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error ?? 'Oyun bulunamadı'}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
             <Text style={styles.retryText}>Geri Dön</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     )
   }
 
@@ -93,8 +94,11 @@ export default function GameDetailScreen() {
   const timeLeft = calcTimeLeft(game.end_date)
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={styles.screen}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.heroContainer}>
           <Image
             source={{ uri: game.image || game.thumbnail }}
@@ -102,6 +106,7 @@ export default function GameDetailScreen() {
             resizeMode="cover"
             defaultSource={require('../../assets/placeholder.png')}
           />
+
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
               <Path
@@ -113,6 +118,7 @@ export default function GameDetailScreen() {
               />
             </Svg>
           </TouchableOpacity>
+
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>Ücretsiz</Text>
           </View>
@@ -125,15 +131,23 @@ export default function GameDetailScreen() {
           <View style={styles.chipsRow}>
             <View style={styles.chip}>
               <Text style={styles.chipLabel}>Platform</Text>
-              <Text style={styles.chipVal} numberOfLines={1}>{game.platforms}</Text>
+              <Text style={styles.chipVal} numberOfLines={1}>
+                {game.platforms}
+              </Text>
             </View>
+
             <View style={styles.chip}>
               <Text style={styles.chipLabel}>Değer</Text>
-              <Text style={styles.chipVal}>{game.worth !== 'N/A' ? game.worth : 'Bilinmiyor'}</Text>
+              <Text style={styles.chipVal}>
+                {game.worth !== 'N/A' ? game.worth : 'Bilinmiyor'}
+              </Text>
             </View>
+
             <View style={styles.chip}>
               <Text style={styles.chipLabel}>Tür</Text>
-              <Text style={styles.chipVal} numberOfLines={1}>{game.type}</Text>
+              <Text style={styles.chipVal} numberOfLines={1}>
+                {game.type}
+              </Text>
             </View>
           </View>
 
@@ -168,6 +182,7 @@ export default function GameDetailScreen() {
         >
           <Text style={styles.grabText}>Platforma Git →</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.saveBtn, saved && styles.saveBtnActive]}
           onPress={handleSave}
@@ -177,6 +192,7 @@ export default function GameDetailScreen() {
             {saved ? 'Kayıtlarda ✓' : 'Kayıtlara Ekle'}
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.saveBtn}
           onPress={handleShare}
@@ -185,7 +201,7 @@ export default function GameDetailScreen() {
           <Text style={styles.saveText}>🔗 Paylaş</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -201,6 +217,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  scrollContent: {
+    paddingBottom: 210,
+  },
   heroContainer: {
     position: 'relative',
   },
@@ -211,7 +230,7 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: 'absolute',
-    top: 12,
+    top: 36,
     left: 12,
     width: 32,
     height: 32,
@@ -222,7 +241,7 @@ const styles = StyleSheet.create({
   },
   heroBadge: {
     position: 'absolute',
-    top: 10,
+    top: 34,
     right: 10,
     backgroundColor: Colors.accent,
     borderRadius: 12,
@@ -313,11 +332,17 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   footer: {
-    padding: 16,
-    paddingBottom: 24,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 28,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
     gap: 8,
     borderTopWidth: 0.5,
     borderTopColor: Colors.cardBorder,
+    backgroundColor: Colors.bg,
   },
   grabBtn: {
     backgroundColor: Colors.accent,
@@ -334,7 +359,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#333',
     borderRadius: 14,
-    padding: 11,
+    padding: 10,
     alignItems: 'center',
   },
   saveBtnActive: {
