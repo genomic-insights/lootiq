@@ -55,8 +55,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: Colors.cardBorder,
     elevation: 0,
-    height: 96,
-    paddingBottom: 32,
+    height: 102,
+    paddingBottom: 38,
     paddingTop: 8,
   },
   label: {

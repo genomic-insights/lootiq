@@ -13,7 +13,17 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Svg, { Path } from 'react-native-svg'
 import { fetchGiveaway, calcTimeLeft, isPermanent, getTypeLabel } from '../../services/api'
-import { saveGame, removeSavedGame, isGameSaved } from '../../services/storage'
+import {
+  saveGame,
+  removeSavedGame,
+  isGameSaved,
+  isWishlistItem,
+  addWishlistItem,
+  removeWishlistItem,
+  isGameClaimed,
+  claimGame,
+  unclaimGame,
+} from '../../services/storage'
 import { Colors } from '../../constants/colors'
 import { Giveaway } from '../../types'
 
@@ -24,14 +34,22 @@ export default function GameDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [wished, setWished] = useState(false)
+  const [claimed, setClaimed] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       try {
         const data = await fetchGiveaway(Number(id))
         setGame(data)
-        const s = await isGameSaved(data.id)
+        const [s, w, c] = await Promise.all([
+          isGameSaved(data.id),
+          isWishlistItem(data.title),
+          isGameClaimed(data.id),
+        ])
         setSaved(s)
+        setWished(w)
+        setClaimed(c)
       } catch {
         setError('Oyun yüklenemedi. Lütfen tekrar deneyin.')
       } finally {
@@ -44,7 +62,6 @@ export default function GameDetailScreen() {
 
   const handleShare = async () => {
     if (!game) return
-
     await Share.share({
       message: `🎮 ${game.title} şu an ücretsiz kampanya olarak mevcut! ${game.platforms} üzerinden al: ${game.open_giveaway_url} — LootiQ uygulamasından`,
     })
@@ -52,7 +69,6 @@ export default function GameDetailScreen() {
 
   const handleSave = async () => {
     if (!game) return
-
     if (saved) {
       await removeSavedGame(game.id)
       setSaved(false)
@@ -66,6 +82,28 @@ export default function GameDetailScreen() {
         open_giveaway_url: game.open_giveaway_url,
       })
       setSaved(true)
+    }
+  }
+
+  const handleWish = async () => {
+    if (!game) return
+    if (wished) {
+      await removeWishlistItem(game.title)
+      setWished(false)
+    } else {
+      await addWishlistItem(game.title)
+      setWished(true)
+    }
+  }
+
+  const handleClaim = async () => {
+    if (!game) return
+    if (claimed) {
+      await unclaimGame(game.id)
+      setClaimed(false)
+    } else {
+      await claimGame(game.id)
+      setClaimed(true)
     }
   }
 
@@ -119,6 +157,18 @@ export default function GameDetailScreen() {
             </Svg>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
+                stroke={Colors.textPrimary}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>Ücretsiz</Text>
           </View>
@@ -149,6 +199,27 @@ export default function GameDetailScreen() {
                 {getTypeLabel(game.type)}
               </Text>
             </View>
+          </View>
+
+          <View style={styles.bodyActions}>
+            <TouchableOpacity
+              style={[styles.bodyBtn, wished && styles.bodyBtnWished]}
+              onPress={handleWish}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.bodyBtnText, wished && styles.bodyBtnWishedText]}>
+                {wished ? 'Takip Ediliyor ✓' : 'Takibe Al'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.bodyBtn, claimed && styles.bodyBtnClaimed]}
+              onPress={handleClaim}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.bodyBtnText, claimed && styles.bodyBtnClaimedText]}>
+                {claimed ? 'Alındı ✓' : 'Aldım'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {permanent ? (
@@ -192,14 +263,6 @@ export default function GameDetailScreen() {
             {saved ? 'Kayıtlarda ✓' : 'Kayıtlara Ekle'}
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={handleShare}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.saveText}>🔗 Paylaş</Text>
-        </TouchableOpacity>
       </View>
     </View>
   )
@@ -218,7 +281,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   scrollContent: {
-    paddingBottom: 210,
+    paddingBottom: 180,
   },
   heroContainer: {
     position: 'relative',
@@ -239,9 +302,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  shareBtn: {
+    position: 'absolute',
+    top: 36,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.cardInner,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   heroBadge: {
     position: 'absolute',
-    top: 34,
+    bottom: 8,
     right: 10,
     backgroundColor: Colors.accent,
     borderRadius: 12,
@@ -287,6 +361,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: Colors.textPrimary,
+  },
+  bodyActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bodyBtn: {
+    flex: 1,
+    borderWidth: 0.5,
+    borderColor: '#333',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  bodyBtnWished: {
+    borderColor: Colors.accent,
+  },
+  bodyBtnClaimed: {
+    borderColor: Colors.success,
+  },
+  bodyBtnText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  bodyBtnWishedText: {
+    color: Colors.accent,
+  },
+  bodyBtnClaimedText: {
+    color: Colors.success,
   },
   timerBox: {
     backgroundColor: '#1a1520',

@@ -71,3 +71,62 @@ export const getPlatformPrefs = async (): Promise<Record<string, boolean>> => {
 export const savePlatformPrefs = async (prefs: Record<string, boolean>): Promise<void> => {
   await AsyncStorage.setItem(PLATFORM_PREFS_KEY, JSON.stringify(prefs))
 }
+
+const WISHLIST_KEY = '@lootiq_wishlist'
+const CLAIMED_KEY = '@lootiq_claimed'
+
+export const getWishlist = async (): Promise<string[]> => {
+  try {
+    const data = await AsyncStorage.getItem(WISHLIST_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export const addWishlistItem = async (name: string): Promise<void> => {
+  const trimmed = name.trim()
+  if (trimmed.length < 2) return
+  const list = await getWishlist()
+  const exists = list.some(item => item.toLowerCase() === trimmed.toLowerCase())
+  if (!exists) {
+    await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify([...list, trimmed]))
+  }
+}
+
+export const removeWishlistItem = async (name: string): Promise<void> => {
+  const list = await getWishlist()
+  const filtered = list.filter(item => item.toLowerCase() !== name.trim().toLowerCase())
+  await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(filtered))
+}
+
+export const isWishlistItem = async (name: string): Promise<boolean> => {
+  const list = await getWishlist()
+  return list.some(item => item.toLowerCase() === name.trim().toLowerCase())
+}
+
+export const getClaimedIds = async (): Promise<number[]> => {
+  try {
+    const data = await AsyncStorage.getItem(CLAIMED_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export const claimGame = async (id: number): Promise<void> => {
+  const ids = await getClaimedIds()
+  if (!ids.includes(id)) {
+    await AsyncStorage.setItem(CLAIMED_KEY, JSON.stringify([...ids, id]))
+  }
+}
+
+export const unclaimGame = async (id: number): Promise<void> => {
+  const ids = await getClaimedIds()
+  await AsyncStorage.setItem(CLAIMED_KEY, JSON.stringify(ids.filter(i => i !== id)))
+}
+
+export const isGameClaimed = async (id: number): Promise<boolean> => {
+  const ids = await getClaimedIds()
+  return ids.includes(id)
+}
