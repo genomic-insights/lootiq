@@ -73,6 +73,20 @@ export const getPlatformLabel = (platforms: string): string => {
   return platforms
 }
 
+const CONSOLE_KEYWORDS = ['playstation', 'xbox', 'nintendo', 'switch', 'android', 'ios', 'mobile']
+
+export const sanitizePlatformsForUI = (platforms: string): string => {
+  if (!platforms) return 'PC'
+
+  const parts = platforms.split(',').map(p => p.trim()).filter(Boolean)
+  const filtered = parts.filter(p =>
+    !CONSOLE_KEYWORDS.some(kw => p.toLowerCase().includes(kw))
+  )
+
+  if (filtered.length === 0) return 'PC'
+  return filtered.join(', ')
+}
+
 export const getTypeLabel = (type: string): string => {
   switch (String(type ?? '').toLowerCase()) {
     case 'game': return 'Oyun'

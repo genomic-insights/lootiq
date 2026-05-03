@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchGiveaways } from '../services/api'
+import { fetchGiveaways, isPermanent } from '../services/api'
 import { Giveaway } from '../types'
 
 export const useGiveaways = (platform?: string, typeFilter?: 'game') => {
@@ -14,9 +14,10 @@ export const useGiveaways = (platform?: string, typeFilter?: 'game') => {
     try {
       const result = await fetchGiveaways(platform)
       const list = Array.isArray(result) ? result : []
+      const withoutPermanent = list.filter(g => !isPermanent(g.end_date))
       const filtered = typeFilter === 'game'
-        ? list.filter(g => String(g.type ?? '').toLowerCase() === 'game')
-        : list
+        ? withoutPermanent.filter(g => String(g.type ?? '').toLowerCase() === 'game')
+        : withoutPermanent
 
       setData(filtered)
     } catch (err) {

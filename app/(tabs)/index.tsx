@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   StyleSheet,
   RefreshControl,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { Colors } from '../../constants/colors'
 import { FilterPill } from '../../components/FilterPill'
 import { GameCard } from '../../components/GameCard'
@@ -17,7 +17,7 @@ import { GameCardSmall, ITEM_HEIGHT } from '../../components/GameCardSmall'
 import { HomeBannerAd } from '../../components/BannerAd'
 import { useGiveaways } from '../../hooks/useGiveaways'
 import { calculateTotalWorth } from '../../services/api'
-import { getWishlist } from '../../services/storage'
+import { getWishlist, removeWishlistItem } from '../../services/storage'
 import { Giveaway } from '../../types'
 
 type FilterItem = {
@@ -39,6 +39,7 @@ export default function HomeScreen() {
   const [activeIdx, setActiveIdx] = useState(0)
   const active = FILTERS[activeIdx]
   const { data, loading, error, refetch } = useGiveaways(active.platform, active.typeFilter)
+  const [wishlist, setWishlist] = useState<string[]>([])
   const [wishlistMatches, setWishlistMatches] = useState<Array<{ id: number; title: string }>>([])
 
   const featured = data.slice(0, 3)
@@ -48,25 +49,30 @@ export default function HomeScreen() {
     ? `Toplam fırsat değeri: $${total.toFixed(2)}${hasUnknown ? '+' : ''}`
     : null
 
+  useFocusEffect(
+    useCallback(() => {
+      getWishlist().then(setWishlist)
+    }, [])
+  )
+
   useEffect(() => {
-    if (data.length === 0) {
+    if (data.length === 0 || wishlist.length === 0) {
       setWishlistMatches([])
       return
     }
-    getWishlist().then(wishlist => {
-      if (wishlist.length === 0) {
-        setWishlistMatches([])
-        return
-      }
-      const matches = data.filter(campaign =>
-        wishlist.some(wish =>
-          wish.trim().length >= 3 &&
-          campaign.title.toLowerCase().includes(wish.trim().toLowerCase())
-        )
+    const matches = data.filter(campaign =>
+      wishlist.some(wish =>
+        wish.trim().length >= 3 &&
+        campaign.title.toLowerCase().includes(wish.trim().toLowerCase())
       )
-      setWishlistMatches(matches.map(m => ({ id: m.id, title: m.title })))
-    })
-  }, [data])
+    )
+    setWishlistMatches(matches.map(m => ({ id: m.id, title: m.title })))
+  }, [data, wishlist])
+
+  const handleRemoveFromWishlist = async (name: string) => {
+    await removeWishlistItem(name)
+    setWishlist(prev => prev.filter(w => w.toLowerCase() !== name.toLowerCase()))
+  }
 
   return (
     <View style={styles.screen}>
@@ -109,6 +115,29 @@ export default function HomeScreen() {
         </ScrollView>
 
         <HomeBannerAd />
+
+        {wishlist.length > 0 && (
+          <View style={styles.wishSection}>
+            <Text style={styles.wishSectionTitle}>TAKİP LİSTEM</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.wishPillRow}
+            >
+              {wishlist.map(item => (
+                <View key={item} style={styles.wishPill}>
+                  <Text style={styles.wishPillText} numberOfLines={1}>{item}</Text>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveFromWishlist(item)}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  >
+                    <Text style={styles.wishPillX}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {loading && (
           <View style={styles.center}>
@@ -237,6 +266,40 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingBottom: 12,
+  },
+  wishSection: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    gap: 6,
+  },
+  wishSectionTitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+  },
+  wishPillRow: {
+    gap: 6,
+  },
+  wishPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Colors.cardInner,
+    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderWidth: 0.5,
+    borderColor: '#2a2a3a',
+  },
+  wishPillText: {
+    fontSize: 11,
+    color: Colors.textPrimary,
+    maxWidth: 120,
+  },
+  wishPillX: {
+    fontSize: 10,
+    color: Colors.textMuted,
   },
   matchBanner: {
     marginHorizontal: 16,

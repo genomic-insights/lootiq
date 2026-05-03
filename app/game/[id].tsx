@@ -12,7 +12,13 @@ import {
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Svg, { Path } from 'react-native-svg'
-import { fetchGiveaway, calcTimeLeft, isPermanent, getTypeLabel } from '../../services/api'
+import {
+  fetchGiveaway,
+  calcTimeLeft,
+  isPermanent,
+  getTypeLabel,
+  sanitizePlatformsForUI,
+} from '../../services/api'
 import {
   saveGame,
   removeSavedGame,
@@ -130,6 +136,7 @@ export default function GameDetailScreen() {
 
   const permanent = isPermanent(game.end_date)
   const timeLeft = calcTimeLeft(game.end_date)
+  const platformDisplay = sanitizePlatformsForUI(game.platforms)
 
   return (
     <View style={styles.screen}>
@@ -157,18 +164,6 @@ export default function GameDetailScreen() {
             </Svg>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
-                stroke={Colors.textPrimary}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </TouchableOpacity>
-
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>Ücretsiz</Text>
           </View>
@@ -176,13 +171,13 @@ export default function GameDetailScreen() {
 
         <View style={styles.body}>
           <Text style={styles.title}>{game.title}</Text>
-          <Text style={styles.subtitle}>{game.platforms}</Text>
+          <Text style={styles.subtitle}>{platformDisplay}</Text>
 
           <View style={styles.chipsRow}>
             <View style={styles.chip}>
               <Text style={styles.chipLabel}>Platform</Text>
               <Text style={styles.chipVal} numberOfLines={1}>
-                {game.platforms}
+                {platformDisplay}
               </Text>
             </View>
 
@@ -222,11 +217,11 @@ export default function GameDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {permanent ? (
-            <View style={styles.permBox}>
-              <Text style={styles.permText}>Kalıcı Ücretsiz</Text>
-            </View>
-          ) : (
+          <TouchableOpacity style={styles.shareFullBtn} onPress={handleShare} activeOpacity={0.8}>
+            <Text style={styles.shareFullText}>🔗 Paylaş</Text>
+          </TouchableOpacity>
+
+          {!permanent && (
             <View style={styles.timerBox}>
               <Text style={styles.timerLabel}>Kalan Süre</Text>
               <Text style={styles.timerVal}>{timeLeft}</Text>
@@ -281,7 +276,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   scrollContent: {
-    paddingBottom: 180,
+    paddingBottom: 160,
   },
   heroContainer: {
     position: 'relative',
@@ -295,17 +290,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 36,
     left: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.cardInner,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shareBtn: {
-    position: 'absolute',
-    top: 36,
-    right: 12,
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -390,6 +374,17 @@ const styles = StyleSheet.create({
   bodyBtnClaimedText: {
     color: Colors.success,
   },
+  shareFullBtn: {
+    borderWidth: 0.5,
+    borderColor: '#333',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  shareFullText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
   timerBox: {
     backgroundColor: '#1a1520',
     borderWidth: 0.5,
@@ -407,20 +402,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: Colors.danger,
-  },
-  permBox: {
-    backgroundColor: '#0f1f1a',
-    borderWidth: 0.5,
-    borderColor: '#1D9E7544',
-    borderRadius: 12,
-    padding: 10,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-  },
-  permText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.success,
   },
   descTitle: {
     fontSize: 13,

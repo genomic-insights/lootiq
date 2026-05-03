@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Giveaway } from '../types'
 import { Colors } from '../constants/colors'
-import { calcTimeLeft, isPermanent, getTypeLabel } from '../services/api'
+import { calcTimeLeft, getTypeLabel, sanitizePlatformsForUI } from '../services/api'
 
 interface Props {
   game: Giveaway
@@ -11,7 +11,6 @@ interface Props {
 
 export const GameCard: React.FC<Props> = ({ game }) => {
   const router = useRouter()
-  const permanent = isPermanent(game.end_date)
   const timeLeft = calcTimeLeft(game.end_date)
   const [imgError, setImgError] = useState(false)
 
@@ -34,24 +33,18 @@ export const GameCard: React.FC<Props> = ({ game }) => {
       <View style={styles.info}>
         <View style={styles.row}>
           <Text style={styles.title} numberOfLines={1}>{game.title}</Text>
-          {permanent ? (
-            <View style={styles.permBadge}>
-              <Text style={styles.permBadgeText}>Kalıcı</Text>
-            </View>
-          ) : (
-            <View style={styles.freeBadge}>
-              <Text style={styles.freeBadgeText}>Ücretsiz</Text>
-            </View>
-          )}
+          <View style={styles.freeBadge}>
+            <Text style={styles.freeBadgeText}>Ücretsiz</Text>
+          </View>
         </View>
         <View style={styles.row}>
           <View style={styles.metaLeft}>
-            <Text style={styles.platform}>{game.platforms}</Text>
+            <Text style={styles.platform}>{sanitizePlatformsForUI(game.platforms)}</Text>
             <View style={styles.typeBadge}>
               <Text style={styles.typeBadgeText}>{getTypeLabel(game.type)}</Text>
             </View>
           </View>
-          {!permanent && (
+          {timeLeft !== 'Kalıcı' && (
             <Text style={styles.timeLeft}>{timeLeft}</Text>
           )}
         </View>
