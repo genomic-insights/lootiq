@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Giveaway } from '../types'
 import { Colors } from '../constants/colors'
-import { calcTimeLeft, isPermanent } from '../services/api'
+import { calcTimeLeft, isPermanent, getTypeLabel } from '../services/api'
 
 interface Props {
   game: Giveaway
@@ -45,7 +45,12 @@ export const GameCard: React.FC<Props> = ({ game }) => {
           )}
         </View>
         <View style={styles.row}>
-          <Text style={styles.platform}>{game.platforms}</Text>
+          <View style={styles.metaLeft}>
+            <Text style={styles.platform}>{game.platforms}</Text>
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>{getTypeLabel(game.type)}</Text>
+            </View>
+          </View>
           {!permanent && (
             <Text style={styles.timeLeft}>{timeLeft}</Text>
           )}
@@ -111,8 +116,25 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontSize: 10,
   },
+  metaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   platform: {
     fontSize: 11,
+    color: Colors.textSecondary,
+  },
+  typeBadge: {
+    backgroundColor: Colors.cardInner,
+    borderRadius: 4,
+    paddingVertical: 1,
+    paddingHorizontal: 5,
+    borderWidth: 0.5,
+    borderColor: '#333',
+  },
+  typeBadgeText: {
+    fontSize: 9,
     color: Colors.textSecondary,
   },
   timeLeft: {

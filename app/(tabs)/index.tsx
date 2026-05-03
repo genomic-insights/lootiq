@@ -15,23 +15,36 @@ import { FilterPill } from '../../components/FilterPill'
 import { GameCard } from '../../components/GameCard'
 import { GameCardSmall, ITEM_HEIGHT } from '../../components/GameCardSmall'
 import { useGiveaways } from '../../hooks/useGiveaways'
+import { calculateTotalWorth } from '../../services/api'
 import { Giveaway } from '../../types'
 
-const FILTERS = [
-  { label: 'Tümü', value: undefined },
-  { label: 'Epic', value: 'epic-games-store' },
-  { label: 'Steam', value: 'steam' },
-  { label: 'GOG', value: 'gog' },
-  { label: 'PS/Xbox', value: 'ps4' },
+type FilterItem = {
+  label: string
+  platform?: string
+  typeFilter?: 'game'
+}
+
+const FILTERS: FilterItem[] = [
+  { label: 'Tümü' },
+  { label: 'Oyunlar', typeFilter: 'game' },
+  { label: 'Epic', platform: 'epic-games-store' },
+  { label: 'Steam', platform: 'steam' },
+  { label: 'GOG', platform: 'gog' },
+  { label: 'Konsol', platform: 'console' },
 ]
 
 export default function HomeScreen() {
   const router = useRouter()
-  const [activeFilter, setActiveFilter] = useState<string | undefined>(undefined)
-  const { data, loading, error, refetch } = useGiveaways(activeFilter)
+  const [activeIdx, setActiveIdx] = useState(0)
+  const active = FILTERS[activeIdx]
+  const { data, loading, error, refetch } = useGiveaways(active.platform, active.typeFilter)
 
   const featured = data.slice(0, 3)
   const rest = data.slice(3)
+  const { total, hasUnknown } = calculateTotalWorth(data)
+  const worthText = total > 0
+    ? `Toplam fırsat değeri: $${total.toFixed(2)}${hasUnknown ? '+' : ''}`
+    : null
 
   return (
     <View style={styles.screen}>
@@ -63,12 +76,12 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
         >
-          {FILTERS.map(f => (
+          {FILTERS.map((f, idx) => (
             <FilterPill
               key={f.label}
               label={f.label}
-              active={activeFilter === f.value}
-              onPress={() => setActiveFilter(f.value)}
+              active={activeIdx === idx}
+              onPress={() => setActiveIdx(idx)}
             />
           ))}
         </ScrollView>
@@ -90,37 +103,57 @@ export default function HomeScreen() {
 
         {!loading && !error && (
           <>
-            {featured.length > 0 && (
+            {data.length === 0 ? (
+              <View style={styles.center}>
+                <Text style={styles.errorText}>
+                  Bu platform için şu anda aktif kampanya bulunamadı.
+                </Text>
+                {activeIdx !== 0 && (
+                  <TouchableOpacity style={styles.retryBtn} onPress={() => setActiveIdx(0)}>
+                    <Text style={styles.retryText}>Tümünü Göster</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
               <>
-                <Text style={styles.sectionTitle}>ÖNE ÇIKANLAR</Text>
-                {featured.map(game => (
-                  <GameCard key={game.id} game={game} />
-                ))}
-              </>
-            )}
+                {worthText && (
+                  <View style={styles.worthCard}>
+                    <Text style={styles.worthText}>{worthText}</Text>
+                  </View>
+                )}
 
-            {rest.length > 0 && (
-              <>
-                <Text style={styles.sectionTitle}>TÜM ÜCRETSİZ OYUNLAR</Text>
-                <FlatList
-                  data={rest}
-                  keyExtractor={(item: Giveaway) => item.id.toString()}
-                  numColumns={2}
-                  scrollEnabled={false}
-                  renderItem={({ item }: { item: Giveaway }) => (
-                    <GameCardSmall game={item} />
-                  )}
-                  getItemLayout={(_: any, index: number) => ({
-                    length: ITEM_HEIGHT,
-                    offset: ITEM_HEIGHT * Math.floor(index / 2),
-                    index,
-                  })}
-                />
+                {featured.length > 0 && (
+                  <>
+                    <Text style={styles.sectionTitle}>ÖNE ÇIKAN FIRSATLAR</Text>
+                    {featured.map(game => (
+                      <GameCard key={game.id} game={game} />
+                    ))}
+                  </>
+                )}
+
+                {rest.length > 0 && (
+                  <>
+                    <Text style={styles.sectionTitle}>TÜM KAMPANYALAR</Text>
+                    <FlatList
+                      data={rest}
+                      keyExtractor={(item: Giveaway) => item.id.toString()}
+                      numColumns={2}
+                      scrollEnabled={false}
+                      renderItem={({ item }: { item: Giveaway }) => (
+                        <GameCardSmall game={item} />
+                      )}
+                      getItemLayout={(_: any, index: number) => ({
+                        length: ITEM_HEIGHT,
+                        offset: ITEM_HEIGHT * Math.floor(index / 2),
+                        index,
+                      })}
+                    />
+                  </>
+                )}
               </>
             )}
           </>
         )}
-
         <View style={styles.spacer} />
       </ScrollView>
     </View>
@@ -167,6 +200,20 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingBottom: 12,
+  },
+  worthCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: Colors.cardInner,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 0.5,
+    borderColor: Colors.cardBorder,
+  },
+  worthText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
   },
   sectionTitle: {
     fontSize: 13,

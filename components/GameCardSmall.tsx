@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Giveaway } from '../types'
 import { Colors } from '../constants/colors'
-import { calcTimeLeft, isPermanent } from '../services/api'
+import { calcTimeLeft, isPermanent, getTypeLabel } from '../services/api'
 
 export const ITEM_HEIGHT = 180
 
@@ -29,7 +29,9 @@ export const GameCardSmall: React.FC<Props> = ({ game }) => {
       />
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>{game.title}</Text>
-        <Text style={styles.platform} numberOfLines={1}>{game.platforms}</Text>
+        <Text style={styles.platform} numberOfLines={1}>
+          {game.platforms} · {getTypeLabel(game.type)}
+        </Text>
         {permanent ? (
           <Text style={styles.perm}>Kalıcı Ücretsiz</Text>
         ) : (

@@ -23,27 +23,6 @@ async function setupNotifications() {
       lightColor: '#7F77DD',
     })
   }
-
-  const { status: existing } = await Notifications.getPermissionsAsync()
-  const { status } = existing === 'granted'
-    ? { status: existing }
-    : await Notifications.requestPermissionsAsync()
-
-  console.log('[Notifications] İzin durumu:', status)
-
-  if (status !== 'granted') {
-    console.log('[Notifications] İzin reddedildi.')
-    return
-  }
-
-  // FCM/APNs token — development build veya production'da çalışır
-  // Expo Go'da hata alınabilir, bu normaldir
-  try {
-    const token = await Notifications.getDevicePushTokenAsync()
-    console.log('[Notifications] Device Push Token:', token.data)
-  } catch (e) {
-    console.log('[Notifications] Token alınamadı (dev build gerekli):', (e as Error).message)
-  }
 }
 
 export default function RootLayout() {

@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Svg, { Path } from 'react-native-svg'
-import { fetchGiveaway, calcTimeLeft, isPermanent } from '../../services/api'
+import { fetchGiveaway, calcTimeLeft, isPermanent, getTypeLabel } from '../../services/api'
 import { saveGame, removeSavedGame, isGameSaved } from '../../services/storage'
 import { Colors } from '../../constants/colors'
 import { Giveaway } from '../../types'
@@ -46,7 +46,7 @@ export default function GameDetailScreen() {
     if (!game) return
 
     await Share.share({
-      message: `🎮 ${game.title} şu an ücretsiz! ${game.platforms} üzerinden al: ${game.open_giveaway_url} — LootiQ uygulamasından`,
+      message: `🎮 ${game.title} şu an ücretsiz kampanya olarak mevcut! ${game.platforms} üzerinden al: ${game.open_giveaway_url} — LootiQ uygulamasından`,
     })
   }
 
@@ -146,7 +146,7 @@ export default function GameDetailScreen() {
             <View style={styles.chip}>
               <Text style={styles.chipLabel}>Tür</Text>
               <Text style={styles.chipVal} numberOfLines={1}>
-                {game.type}
+                {getTypeLabel(game.type)}
               </Text>
             </View>
           </View>

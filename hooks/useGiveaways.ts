@@ -2,23 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchGiveaways } from '../services/api'
 import { Giveaway } from '../types'
 
-const isDLC = (g: Giveaway): boolean => {
-  const hay = `${g.title ?? ''} ${g.description ?? ''}`.toLowerCase()
-  return hay.includes('dlc')
-}
-
-const filterGames = (list: Giveaway[]): Giveaway[] => {
-  if (!Array.isArray(list)) return []
-
-  return list.filter(g => {
-    const type = String(g.type ?? '').toLowerCase()
-    const isGame = !type || type === 'game'
-
-    return isGame && !isDLC(g)
-  })
-}
-
-export const useGiveaways = (platform?: string) => {
+export const useGiveaways = (platform?: string, typeFilter?: 'game') => {
   const [data, setData] = useState<Giveaway[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +13,10 @@ export const useGiveaways = (platform?: string) => {
 
     try {
       const result = await fetchGiveaways(platform)
-      const filtered = filterGames(result)
+      const list = Array.isArray(result) ? result : []
+      const filtered = typeFilter === 'game'
+        ? list.filter(g => String(g.type ?? '').toLowerCase() === 'game')
+        : list
 
       setData(filtered)
     } catch (err) {
@@ -38,7 +25,7 @@ export const useGiveaways = (platform?: string) => {
     } finally {
       setLoading(false)
     }
-  }, [platform])
+  }, [platform, typeFilter])
 
   useEffect(() => {
     load()

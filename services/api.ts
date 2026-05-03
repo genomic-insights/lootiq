@@ -2,7 +2,7 @@ import { Giveaway } from '../types'
 
 const BASE = 'https://www.gamerpower.com/api'
 
-export const fetchGiveaways = async (platform?: string): Promise<Giveaway[]> => {
+const fetchFromPlatform = async (platform?: string): Promise<Giveaway[]> => {
   const url = platform
     ? `${BASE}/giveaways?platform=${platform}`
     : `${BASE}/giveaways`
@@ -14,6 +14,20 @@ export const fetchGiveaways = async (platform?: string): Promise<Giveaway[]> => 
   }
 
   return res.json()
+}
+
+export const fetchGiveaways = async (platform?: string): Promise<Giveaway[]> => {
+  if (platform === 'console') {
+    const results = await Promise.allSettled([
+      fetchFromPlatform('ps4'),
+      fetchFromPlatform('xbox-one'),
+    ])
+    return results
+      .filter((r): r is PromiseFulfilledResult<Giveaway[]> => r.status === 'fulfilled')
+      .flatMap(r => r.value)
+  }
+
+  return fetchFromPlatform(platform)
 }
 
 export const fetchGiveaway = async (id: number): Promise<Giveaway> => {
@@ -57,4 +71,38 @@ export const getPlatformLabel = (platforms: string): string => {
   if (lower.includes('xbox')) return 'Xbox'
 
   return platforms
+}
+
+export const getTypeLabel = (type: string): string => {
+  switch (String(type ?? '').toLowerCase()) {
+    case 'game': return 'Oyun'
+    case 'dlc': return 'DLC/Paket'
+    case 'early access': return 'Erken Erişim'
+    default: return 'Diğer'
+  }
+}
+
+export const parseWorthValue = (worth: string): number | null => {
+  if (!worth || worth === 'N/A') return null
+  const cleaned = worth.replace(/[^0-9.]/g, '')
+  const num = parseFloat(cleaned)
+  return isNaN(num) ? null : num
+}
+
+export const calculateTotalWorth = (
+  list: Giveaway[]
+): { total: number; hasUnknown: boolean } => {
+  let total = 0
+  let hasUnknown = false
+
+  for (const item of list) {
+    const val = parseWorthValue(item.worth)
+    if (val !== null) {
+      total += val
+    } else {
+      hasUnknown = true
+    }
+  }
+
+  return { total, hasUnknown }
 }
